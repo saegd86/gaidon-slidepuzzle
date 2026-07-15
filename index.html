@@ -106,6 +106,24 @@
     background-size: 300px 300px;
     z-index: 10;
   }
+  /* --- ここからスマホ用のレイアウト調整 --- */
+  @media (max-width: 600px) {
+    .game-wrapper {
+      flex-direction: column; /* 全体を縦並びに変更 */
+      padding: 15px;
+    }
+    .side-panel {
+      flex-direction: row; /* ボタン同士を横並びに変更 */
+      flex-wrap: wrap; /* 画面に収まらない場合は折り返す */
+      justify-content: center;
+    }
+    .side-panel button {
+      width: 100px; /* スマホ用にボタンを少し小さく */
+      height: 70px;
+      font-size: 14px;
+    }
+  }
+  /* --- ここまで --- */
 </style>
 </head>
 <body>

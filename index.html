@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自社キャラクタースライドパズル（機能追加版）</title>
+<style>
+  /* 全体の設定 */
+  :root {
+    /* 初期画像のURL */
+    --puzzle-bg: url('https://picsum.photos/id/237/300/300');
+  }
+
+  body {
+    font-family: 'Hiragino Maru Gothic ProN', 'ヒラギノ丸ゴ ProN W4', sans-serif; /* 丸みを帯びたフォント */
+    text-align: center;
+    background-color: #66cdaa; /* 画面背景（緑系） */
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  h1 { color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+
+  /* ゲーム画面の枠（青い背景部分） */
+  .game-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    background-color: #4da6ff; /* ドラえもん風の青 */
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+
+  /* パズル全体の枠（300px × 300px） */
+  #puzzle-container {
+    width: 300px;
+    height: 300px;
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
+    background-color: #000; /* 隙間の色を黒に */
+    border: 2px solid #333;
+    position: relative;
+  }
+
+  /* パズルの各ピース */
+  .tile {
+    width: 100px;
+    height: 100px;
+    background-image: var(--puzzle-bg); 
+    background-size: 300px 300px;
+    cursor: pointer;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.8); /* ピースの境界線 */
+  }
+
+  /* 空白マス（黒塗り） */
+  .empty {
+    background-image: none !important;
+    background-color: #000;
+    cursor: default;
+  }
+
+  /* 左右のボタンを縦に並べるパネル */
+  .side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  /* ボタンのデザイン（ぷっくりした白いボタン） */
+  .side-panel button {
+    background-color: #fff;
+    color: #4da6ff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 110px;
+    height: 80px;
+    line-height: 1.4;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3), inset -2px -2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .side-panel button:active {
+    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2); /* 押した時のへこみ */
+    transform: translateY(2px);
+  }
+
+  /* 完成図のオーバーレイ表示用 */
+  #hint-image {
+    display: none;
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: var(--puzzle-bg);
+    background-size: 300px 300px;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+  <h1>スライドパズル</h1>
+  
+  <div class="game-wrapper">
+    <div class="side-panel">
+      <button id="quit-btn">やめる</button>
+    </div>
+
+    <div id="puzzle-container">
+      <div id="hint-image"></div>
+    </div>
+
+    <div class="side-panel">
+      <button id="hint-btn"><span style="color:#ffcc00; font-size:12px;">★ヒント</span><br>かんせいず<br>をみる</button>
+      <button id="restart-btn">もういちど<br>はじめから</button>
+      <button id="change-pic-btn">絵を<br>かえる</button>
+    </div>
+  </div>
+
+<script>
+  // ★ ここに自社キャラクターの画像URL（またはファイル名）を複数登録します ★
+  const imageList = [
+    'https://picsum.photos/id/237/300/300', // 1枚目 (サンプルの犬)
+    'https://picsum.photos/id/1015/300/300',// 2枚目 (サンプルの風景)
+    'https://picsum.photos/id/1025/300/300' // 3枚目 (サンプルのパグ)
+  ];
+  let currentImageIndex = 0; // 現在表示している画像の番号
+
+  const container = document.getElementById('puzzle-container');
+  const hintBtn = document.getElementById('hint-btn');
+  const hintImage = document.getElementById('hint-image');
+  let tiles = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  
+  function getBackgroundPosition(index) {
+    const x = (index % 3) * -100;
+    const y = Math.floor(index / 3) * -100;
+    return `${x}px ${y}px`;
+  }
+
+  function shuffle() {
+    // 完全にランダムだとクリア不可能な配置になることがあるため、簡易的なシャッフル
+    for (let i = tiles.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+    }
+  }
+
+  function render() {
+    const hintNode = document.getElementById('hint-image');
+    container.innerHTML = '';
+    container.appendChild(hintNode);
+
+    tiles.forEach((tileIndex, positionIndex) => {
+      const div = document.createElement('div');
+      div.classList.add('tile');
+      
+      if (tileIndex === 8) {
+        div.classList.add('empty');
+      } else {
+        div.style.backgroundPosition = getBackgroundPosition(tileIndex);
+      }
+
+      div.addEventListener('click', () => moveTile(positionIndex));
+      container.appendChild(div);
+    });
+  }
+
+  function moveTile(index) {
+    const emptyIndex = tiles.indexOf(8);
+    const isAdjacent = 
+      (index === emptyIndex - 1 && emptyIndex % 3 !== 0) || 
+      (index === emptyIndex + 1 && index % 3 !== 0) ||      
+      (index === emptyIndex - 3) ||                         
+      (index === emptyIndex + 3);                           
+
+    if (isAdjacent) {
+      [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+      render();
+      checkClear();
+    }
+  }
+
+  function checkClear() {
+    const isCleared = tiles.every((val, index) => val === index);
+    if (isCleared) {
+      setTimeout(() => alert("クリアおめでとう！"), 100);
+    }
+  }
+
+  // --- ボタンの機能追加 ---
+
+  // 「かんせいずをみる」ボタン（押している間だけ表示）
+  hintBtn.addEventListener('mousedown', () => hintImage.style.display = 'block');
+  hintBtn.addEventListener('mouseup', () => hintImage.style.display = 'none');
+  hintBtn.addEventListener('mouseleave', () => hintImage.style.display = 'none'); // マウスが外れた時も消す
+  hintBtn.addEventListener('touchstart', () => hintImage.style.display = 'block'); 
+  hintBtn.addEventListener('touchend', () => hintImage.style.display = 'none'); 
+
+  // 「もういちどはじめから」ボタン
+  document.getElementById('restart-btn').addEventListener('click', () => {
+    shuffle();
+    render();
+  });
+
+  // 「絵をかえる」ボタン
+  document.getElementById('change-pic-btn').addEventListener('click', () => {
+    // 次の画像へ（最後までいったら0番目に戻る）
+    currentImageIndex = (currentImageIndex + 1) % imageList.length;
+    // CSSの変数を書き換えて画像を更新
+    document.documentElement.style.setProperty('--puzzle-bg', `url('${imageList[currentImageIndex]}')`);
+    
+    shuffle();
+    render();
+  });
+
+  // 「やめる」ボタン
+  document.getElementById('quit-btn').addEventListener('click', () => {
+    // 実際には自社のトップページなどに飛ばす処理を書きます
+    const confirmQuit = confirm("トップページに戻りますか？");
+    if (confirmQuit) {
+      // 例: window.location.href = "https://www.google.com";
+      alert("トップページに戻る処理が実行されました。");
+    }
+  });
+
+  // 初期化
+  shuffle();
+  render();
+</script>
+
+</body>
+</html>

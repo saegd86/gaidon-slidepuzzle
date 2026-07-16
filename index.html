@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>自社キャラクタースライドパズル（機能追加版）</title>
+<title>がいどんスライドパズル</title>
 <style>
   /* 全体の設定 */
   :root {
@@ -30,7 +30,7 @@
     justify-content: center;
     align-items: center;
     gap: 20px;
-    background-color: #4da6ff; /* ドラえもん風の青 */
+    background-color: #0073ba; /* GDコーポレートカラー */
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
@@ -132,7 +132,7 @@
   
   <div class="game-wrapper">
     <div class="side-panel">
-      <button id="quit-btn">やめる</button>
+      <button id="quit-btn">やめる<br>(停止中)<br></button>
     </div>
 
     <div id="puzzle-container">
@@ -140,7 +140,7 @@
     </div>
 
     <div class="side-panel">
-      <button id="hint-btn"><span style="color:#ffcc00; font-size:12px;">★ヒント</span><br>かんせいず<br>をみる</button>
+      <button id="hint-btn"><span style="color:#ffcc00; font-size:12px;">★ヒント<br>ボタン長押し<br></span><br>完成図<br>をみる</button>
       <button id="restart-btn">もういちど<br>はじめから</button>
       <button id="change-pic-btn">絵を<br>かえる</button>
     </div>
@@ -221,7 +221,7 @@
 
   // --- ボタンの機能追加 ---
 
-  // 「かんせいずをみる」ボタン（押している間だけ表示）
+  // 「完成図をみる」ボタン（押している間だけ表示）
   hintBtn.addEventListener('mousedown', () => hintImage.style.display = 'block');
   hintBtn.addEventListener('mouseup', () => hintImage.style.display = 'none');
   hintBtn.addEventListener('mouseleave', () => hintImage.style.display = 'none'); // マウスが外れた時も消す
